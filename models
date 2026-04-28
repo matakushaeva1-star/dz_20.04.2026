@@ -1,0 +1,97 @@
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
+from sqlalchemy.orm import sessionmaker, declarative_base
+
+Base = declarative_base()
+class Author(Base):
+    __tablename__ = 'authors'
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+class Book(Base):
+    __tablename__ = 'books'
+    id = Column(Integer, primary_key=True)
+    title = Column(String)
+    year = Column(Integer)
+    isbn = Column(String, nullable=True)
+    author_id = Column(Integer, ForeignKey('authors.id'))
+
+class Reader(Base):
+    __tablename__ = 'readers'
+    id = Column(Integer, primary_key=True)
+    first_name = Column(String)
+    last_name = Column(String)
+    email = Column(String, unique=True)
+
+class LibraryManager:
+    def __init__(self, db_path):
+        self.engine = create_engine(f'sqlite:///{db_path}')
+        Base.metadata.create_all(self.engine)
+        Session = sessionmaker(bind=self.engine)
+        self.session = Session()
+
+    #методы для книг (Book)
+    def add_book(self, title, author_id, year, isbn=None):
+        # Проверяем, существует ли автор
+        author_exists = self.session.query(Author).filter_by(id=author_id).first()
+        if author_exists:
+            new_book = Book(title=title, author_id=author_id, year=year, isbn=isbn)
+            self.session.add(new_book)
+            self.session.commit()
+        else:
+            print(f"Ошибка: Автор с ID {author_id} не найден.")
+
+    def get_all_books(self):
+        return self.session.query(Book).all()
+
+    def find_book_by_id(self, book_id):
+        return self.session.query(Book).get(book_id)
+
+    def update_book(self, book_id, new_title=None, new_year=None, new_isbn=None):
+        book = self.find_book_by_id(book_id)
+        if book:
+            if new_title: book.title = new_title
+            if new_year: book.year = new_year
+            if new_isbn: book.isbn = new_isbn
+            self.session.commit()
+
+    def delete_book(self, book_id):
+        book = self.find_book_by_id(book_id)
+        if book:
+            self.session.delete(book)
+            self.session.commit()
+
+    #методы для читателей (Reader)
+    def add_reader(self, first_name, last_name, email):
+        # Проверка уникальности email
+        existing = self.session.query(Reader).filter_by(email=email).first()
+        if not existing:
+            new_reader = Reader(first_name=first_name, last_name=last_name, email=email)
+            self.session.add(new_reader)
+            self.session.commit()
+        else:
+            print(f"Ошибка: Читатель с email {email} уже существует.")
+
+    def get_all_readers(self):
+        return self.session.query(Reader).all()
+
+    def find_reader_by_id(self, reader_id):
+        return self.session.query(Reader).get(reader_id)
+
+    def update_reader(self, reader_id, new_first_name=None, new_last_name=None, new_email=None):
+        reader = self.find_reader_by_id(reader_id)
+        if reader:
+            if new_first_name: reader.first_name = new_first_name
+            if new_last_name: reader.last_name = new_last_name
+            if new_email: reader.email = new_email
+            self.session.commit()
+
+    def delete_reader(self, reader_id):
+        reader = self.find_reader_by_id(reader_id)
+        if reader:
+            self.session.delete(reader)
+            self.session.commit()
+
+    #методы для авторов (из предыдущего урока)
+    def add_author(self, name):
+        new_author = Author(name=name)
+        self.session.add(new_author)
+        self.session.commit()
