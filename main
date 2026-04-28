@@ -1,0 +1,30 @@
+from models import LibraryManager
+def main():
+    manager = LibraryManager('library.db')
+
+    # книги
+    print("Тестирование Книг ")
+    manager.add_author("Марк Твен")  # Добавляем автора для теста
+    manager.add_book("Приключения Тома Сойера", 1, 1876, "123-456")
+
+    books = manager.get_all_books()
+    for b in books:
+        print(f"Книга: {b.title}, Год: {b.year}")
+
+    # читатели
+    print(f"Тестирование Читателей ")
+    manager.add_reader("Иван", "Иванов", "ivan@mail.ru")
+    manager.add_reader("Анна", "Петрова", "anna@mail.ru")
+
+    print("Список всех читателей:")
+    for r in manager.get_all_readers():
+        print(f"{r.first_name} {r.last_name} ({r.email})")
+
+    # обновление и поиск
+    manager.update_reader(1, new_first_name="Иван (изм.)")
+    found = manager.find_reader_by_id(1)
+    print(f"Обновленный читатель: {found.first_name}")
+
+
+if __name__ == "__main__":
+    main()
